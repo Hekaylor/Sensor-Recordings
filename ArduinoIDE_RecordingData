@@ -1,0 +1,174 @@
+#include <Arduino.h>
+#include <SoftwareSerial.h>
+#include <ESP8266WebServer.h>
+#include <ESP8266WiFi.h>
+#include <Wire.h>
+#include <ArduinoJson.h>
+#include "RTClib.h"
+
+byte GET_ADDRESS[8] = {0xFF, 0x03, 0x02, 0x00, 0x00, 0x01, 0x90, 0x6C};
+byte GET_DISTANCE[8] = {0x01, 0x03, 0x01, 0x00, 0x00, 0x01, 0x85, 0xF6};
+
+byte distanceData[2] = {0x00, 0x00};
+int distance;
+
+int dataArray[300][7];
+
+// —— RTC ——
+RTC_DS3231 rtc;
+char daysOfTheWeek[7][12] = {
+  "Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"
+};
+
+#define RX_PIN D5
+#define TX_PIN D6
+SoftwareSerial sensorSerial(RX_PIN, TX_PIN);
+#define TRN_PIN D0
+
+// —— Wi-Fi creds ——
+const char* ssid     = "moto g pure_7147";
+const char* password = "3204e336344b";
+
+#define TIMEOUT_DELAY 5000
+
+unsigned long lasttime = 0;
+
+ESP8266WebServer server(80);
+
+void sendData(String note, byte *data)
+{
+    lasttime = millis();
+    digitalWrite(TRN_PIN, 1);
+    Serial.print(note);
+    for (int i = 0; i < 8; i++)
+    {
+        Serial.print(data[i], HEX);
+        Serial.print(" ");
+    }
+    Serial.println();
+    Serial.flush();
+    sensorSerial.write(data, 8);
+    sensorSerial.flush();
+    digitalWrite(TRN_PIN, 0);
+    delay(10);
+}
+
+void receiveData()
+{
+    byte data[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    while (sensorSerial.available() == 0)
+    {
+        if (millis() - lasttime > TIMEOUT_DELAY)
+        {
+            Serial.println("Request Timed Out...");
+            break;
+        }
+    }
+    if (sensorSerial.available() > 0)
+    {
+        sensorSerial.readBytes(data, 7);
+        for (int i = 0; i < 7; i++)
+        {
+            Serial.print(data[i], HEX);
+            Serial.print(" ");
+            if (i == 3 || i == 4) {
+                distanceData[i-3] = data[i];
+            }
+        }
+        Serial.println();
+
+        distance = (distanceData[0] * 256) + distanceData[1];
+        Serial.print(distance);
+        Serial.println();
+    }
+    delay(10);
+}
+
+void setup()
+{
+    Serial.begin(115200);
+    sensorSerial.begin(9600);
+    pinMode(TRN_PIN, OUTPUT);
+    Serial.println("\nBegin Program...");
+
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
+    Serial.print("Connecting to Wi-Fi");
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+    Serial.println();
+    Serial.print("Wi-Fi connected, IP = ");
+    Serial.println(WiFi.localIP());
+
+    server.on("/", [](){
+      server.send(200, "text/plain", String(distance));
+    });
+
+    server.begin();
+    Serial.println("HTTP server started");
+
+    server.on("/data", []() {
+        StaticJsonDocument<4096> doc;
+        JsonArray rows = doc.createNestedArray("readings");
+
+        for (int i = 0; i < 300; i++) {
+            JsonArray row = rows.createNestedArray();
+            for (int j = 0; j < 7; j++) {
+                row.add(dataArray[i][j]);
+            }
+        }
+
+        String out;
+        serializeJson(doc, out);
+        server.send(200, "application/json", out);
+    });
+
+    // —— RTC init ——
+    if (!rtc.begin()) {
+        Serial.println("Couldn't find RTC");
+        while (1) delay(10);
+    }
+    if (rtc.lostPower()) {
+        rtc.adjust(DateTime(2025, 1, 1, 1, 1, 0));
+    }
+
+    sendData("Getting Address: ", GET_ADDRESS);
+    receiveData();
+}
+
+void loop()
+{
+    sendData("Getting Distance: ", GET_DISTANCE);
+    receiveData();
+
+    server.handleClient();
+
+    DateTime now = rtc.now();
+    uint32_t unixt = now.unixtime();
+    uint8_t dow   = now.dayOfTheWeek();
+
+    // —— Store in circular buffer ——
+    static int idx = 0;
+    dataArray[idx][0] = distance;
+    dataArray[idx][1] = now.year();
+    dataArray[idx][2] = now.month();
+    dataArray[idx][3] = now.day();
+    dataArray[idx][4] = now.hour();
+    dataArray[idx][5] = now.minute();
+    dataArray[idx][6] = now.second();
+    idx = (idx + 1) % 300;  
+
+    // —— Print timestamp ——
+    char tbuf[64];
+    snprintf(tbuf, sizeof(tbuf),
+        "%s, %04u-%02u-%02u %02u:%02u:%02u",
+        daysOfTheWeek[dow],
+        now.year(), now.month(), now.day(),
+        now.hour(), now.minute(), now.second()
+    );
+    Serial.println(tbuf);
+
+    delay(1000);
+}
