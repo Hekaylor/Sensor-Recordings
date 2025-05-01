@@ -1,0 +1,15 @@
+The file paths will need to be edited depending on who is working on the Pi.
+
+First, connect the Pi to a mouse, keyboard, and monitor.
+
+Once done, make an account with PiConnect from here: https://connect.raspberrypi.com/devices.
+
+Then instructions to link the Pi to your PiConnect account can be found here: https://www.raspberrypi.com/documentation/services/connect.html#link-connect. Read from "Link a Raspberry Pi device with a Connect account".
+
+Navigate to the top left corner and click on the file explorer. You should now see a file called "esptopi.py". Right click on this to copy the file path. Now, right click on this again and open it up with IDLE. Edit line 17, OUT_FILE, to read the file path you just copied.
+
+Next, insert the USB stick into the Pi and head back to the file manager. Open up the "media" folder, open up the next folder (likely named your username), and then "bootfs". Within this, create a file named "esp_readings.csv". This is where all of the readings from the sensor will be stored until the USB is replaced.
+
+Be sure to copy the file path from "bootfs" into line 19, USB_MOUNT, in the "esptopi.py" file. 
+
+Now you can select run at the top of the IDLE IDE to upload the code to the Pi.
