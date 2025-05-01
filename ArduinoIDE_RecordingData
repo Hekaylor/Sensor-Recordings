@@ -1,3 +1,5 @@
+// By Hailey Kaylor for Jeremy Musson at Pinyon Environmental
+
 // Include libraries
 #include <Arduino.h>
 #include <SoftwareSerial.h>
