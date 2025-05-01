@@ -1,0 +1,13 @@
+If the Raspberry Pi ever loses power, the program on it will need to be restarted. Note, all of the data previously gathered is preserved on the Pi.
+
+First, connect the Pi to a mouse, keyboard, and monitor.
+
+Once done, make an account with PiConnect from here: https://connect.raspberrypi.com/devices.
+
+Then instructions to link the Pi to your PiConnect account can be found here: https://www.raspberrypi.com/documentation/services/connect.html#link-connect. Read from "Link a Raspberry Pi device with a Connect account".
+
+Now, to restart the program, connect the Pi to the battery pack and connect to the Pi on your device via PiConnect.
+
+Navigate to the top left corner and click on the file explorer. You should now see a file called "esptopi.py". Right click on this and open it up with IDLE. At the top of this IDE there should be a button to run the program.
+
+The program will now run until it loses power again.
