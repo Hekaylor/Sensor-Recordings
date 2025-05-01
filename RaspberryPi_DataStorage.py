@@ -93,7 +93,7 @@ def run_once():
             print(f"Wrote {len(data)} rows to {OUT_FILE}")
     disable_wifi()
 
-# Functino to run constantly
+# Function to run constantly
 def main():
     while True:
         # if USB stick is mounted, offload and reset live file
