@@ -1,0 +1,9 @@
+In the GitHub you can find the code "ArduinoIDE_RecordingData". You will need to copy and paste this code into an Arduino IDE on your device. Next, add a line after line 180 with the code "rtc.adjust(DateTime(yy, mm, dd, hr, min, sec));" but replace yy with the year, mm with the month, etc. An example would look like "rtc.adjust(DateTime(2025, 5, 1, 14, 11, 0));" which is May 1st, 2025 at 2:11pm.
+
+Now, before the code can be uploaded, you will need to go here: https://randomnerdtutorials.com/how-to-install-esp8266-board-arduino-ide/. Follow the instructions to install the ESP8266 board manager. 
+
+Next, go to Tools (at the top) -> Board -> NodeMCU 0.9 (ESP-12 Module). The port also needs to be changed. To do this, plug the ESP into your device, search within your device for "Device Manager" and expand the Ports (COM & LPT) dropdown. From there, it should list the ESP device and what COM it is on. Now you can go back to the Arduino IDE -> Tools -> Port and select the appropriate COM.
+
+In addition, select the third icon down on the left of the IDE. This should open up the libraries. Make sure you have Adafruit BUSIO, ArduinoJson, and RTClib installed.
+
+With the ESP connected to the clock with a new battery and still plugged into your device, look for the right arrow at the top of your IDE and select it to upload the code to the ESP. Once the code is uploaded, immediately delete the line you just added and upload the code again. This will preserve the time on the clock without resetting it with each run. The clock should now be working correctly, starting from the time you set it to.
